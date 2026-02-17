@@ -9,6 +9,7 @@ def transform_products(df):
     
     # เปลี่ยนชื่อคอลัมน์ให้ตรงกับ SQL
     dim_products.columns = ['item_name', 'category', 'price_per_unit']
+
     return dim_products
 
 def transform_date(df):
@@ -19,7 +20,7 @@ def transform_date(df):
     # เรียงวันที่ให้สวยงาม
     dim_date = dim_date.sort_values('full_date').reset_index(drop=True)
     
-    # สร้าง date_id (เริ่มจาก 1000 หรือ 1 ก็ได้ตามใจชอบ)
+    # สร้าง date_id (เริ่มจาก 1001)
     dim_date['date_id'] = dim_date.index + 1001 
     
     
@@ -30,10 +31,7 @@ def transform_date(df):
     dim_date['weekday'] = dim_date['full_date'].dt.day_name()
     
     # เปลี่ยนชื่อคอลัมน์ให้ตรงกับ SQL schema และจัดลำดับคอลัมน์
-    # เปลี่ยนชื่อคอลัมน์ให้เป็น snake_case
-    dim_date = dim_date.rename(columns={'full_date': 'full_date'})
-    dim_date = dim_date.rename(columns={'weekday': 'day_of_week'})
-    dim_date = dim_date[['date_id', 'full_date', 'year', 'month', 'day', 'day_of_week']]
+    dim_date = dim_date[['date_id', 'full_date', 'year', 'month', 'day', 'weekday']]
     
     return dim_date
 
@@ -56,10 +54,11 @@ def transform_fact(df, dim_date):
     dim_date['full_date'] = pd.to_datetime(dim_date['full_date'])
     
     # 3. Merge df (ตารางยอดขาย) กับ dim_date เพื่อดึง date_id มาใช้แทนวันที่เดิม
+    # ตรงนี้เหมือน การ Join ใน SQL
     fact_transactions = df.merge(
         dim_date[['date_id', 'full_date']], # เลือกมาเฉพาะที่ใช้
-        left_on='Transaction Date', 
-        right_on='full_date', 
+        left_on='Transaction Date', # df ใช้ Transaction Date
+        right_on='full_date', # dim_date ใช้ full_date
         how='left'
     )
     
